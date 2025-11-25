@@ -1,0 +1,7 @@
+# Will be followed by DVC
+/data/
+/models/
+
+# Temporary files
+__pycache__/
+*.pyc
