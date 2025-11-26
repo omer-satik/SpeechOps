@@ -1,6 +1,9 @@
-# Will be followed by DVC
-/data/
-/models/
+# DVC tarafından takip edilecek dosyalar
+# data klasörünün içindeki her şeyi yoksay...
+/data/*
+# AMA .dvc uzantılı dosyaları ve DVC'nin .gitignore dosyalarını yoksayma!
+!/data/**/*.dvc
+!/data/.gitignore
 
 # Temporary files
 __pycache__/
