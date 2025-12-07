@@ -8,3 +8,6 @@
 # Temporary files
 __pycache__/
 *.pyc
+
+# Google secrets file
+client_secrets.json

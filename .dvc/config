@@ -2,3 +2,4 @@
     remote = speechops_remote
 ['remote "speechops_remote"']
     url = gdrive://1DjIJTzp7KpKtR_x7-lVCZhB14IZ6NSkM
+    jobs = 4
