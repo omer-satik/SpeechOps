@@ -11,3 +11,6 @@ __pycache__/
 
 # Google secrets file
 client_secrets.json
+.vscode/
+client_secret_*
+.dvc/config
