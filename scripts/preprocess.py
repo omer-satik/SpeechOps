@@ -5,7 +5,7 @@ import numpy as np
 from datasets import load_dataset
 from tqdm import tqdm
 
-# Sabitleri tanımla
+# Define constants
 PROCESSED_DATA_PATH = "data/processed"
 SAMPLE_RATE = 16000
 N_FFT = 512
@@ -13,9 +13,9 @@ HOP_LENGTH = 256
 HF_DATASET_NAME = "JacobLinCool/VoiceBank-DEMAND-16k"
 
 def process_example(example, save_dir):
-    """Hugging Face'den gelen tek bir ses örneğini işler ve kaydeder."""
+    """Process a single audio example from Hugging Face and save it."""
     try:
-        # ---- DEĞİŞİKLİK: Veriyi doğru sütun adlarıyla al: 'clean' ve 'noisy' ----
+        # Get data using correct column names: 'clean' and 'noisy'
         clean_audio_data = example['clean']
         noisy_audio_data = example['noisy']
         file_id = example['id']
@@ -24,20 +24,20 @@ def process_example(example, save_dir):
         noisy_audio = noisy_audio_data['array']
         sr = clean_audio_data['sampling_rate']
 
-        # Eğer örnekleme oranı farklıysa, yeniden örnekle (resample)
+        # Resample if sample rate is different
         if sr != SAMPLE_RATE:
             clean_audio = librosa.resample(y=clean_audio, orig_sr=sr, target_sr=SAMPLE_RATE)
             noisy_audio = librosa.resample(y=noisy_audio, orig_sr=sr, target_sr=SAMPLE_RATE)
         
-        # Spektrogramları oluştur
+        # Create spectrograms
         clean_spec = np.abs(librosa.stft(clean_audio, n_fft=N_FFT, hop_length=HOP_LENGTH))
         noisy_spec = np.abs(librosa.stft(noisy_audio, n_fft=N_FFT, hop_length=HOP_LENGTH))
         
-        # Dosya adını ve kaydetme yolunu belirle
+        # Determine filename and save path
         base_filename = file_id.replace('.wav', '')
         save_path = os.path.join(save_dir, f"{base_filename}.npz")
         
-        # Dosyayı kaydet
+        # Save the file
         np.savez(save_path, noisy=noisy_spec, clean=clean_spec)
         
     except Exception as e:
@@ -48,17 +48,12 @@ def main():
     
     dataset = load_dataset(HF_DATASET_NAME, split="test")
 
-    # --- BU KONTROL KODUNU ARTIK SİLEBİLİRİZ AMA ŞİMDİLİK KALSIN ---
-    # print(dataset)
-    # print(dataset[0].keys())
-    # -----------------------------------------------------------------
-
     print("Starting data preprocessing...")
-    # İşlenmiş veri için klasörleri oluştur
+    # Create directories for processed data
     test_save_dir = os.path.join(PROCESSED_DATA_PATH, "test")
     os.makedirs(test_save_dir, exist_ok=True)
     
-    # Her örneği işle
+    # Process each example
     for example in tqdm(dataset, desc="Processing Test Set"):
         process_example(example, test_save_dir)
 

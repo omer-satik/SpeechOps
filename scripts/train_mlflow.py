@@ -1,8 +1,5 @@
 # scripts/train_mlflow.py
-"""
-MLflow entegrasyonlu eğitim scripti.
-Faz 2: Deney Takibi ve Model İyileştirme
-"""
+
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -30,7 +27,7 @@ def parse_args():
 
 
 def calculate_snr(estimate: torch.Tensor, target: torch.Tensor) -> float:
-    """Sinyal-Gürültü Oranını (SNR) hesaplar."""
+    """Compute Signal-to-Noise Ratio (SNR)."""
     estimate = estimate.float()
     target = target.float()
     noise = target - estimate
@@ -58,7 +55,7 @@ def validate(model: nn.Module, val_loader: DataLoader, criterion: nn.Module, dev
             loss = criterion(outputs, clean_batch)
             total_loss += loss.item()
             
-            # SNR hesapla
+            # Compute SNR
             for i in range(outputs.shape[0]):
                 snr = calculate_snr(outputs[i], clean_batch[i])
                 if snr != float('inf'):
@@ -74,7 +71,7 @@ def validate(model: nn.Module, val_loader: DataLoader, criterion: nn.Module, dev
 def main():
     args = parse_args()
     
-    # Dizinler
+    # Directories
     TRAIN_DIR = "data/processed/train"
     VAL_DIR = "data/processed/val"
     MODEL_SAVE_PATH = "models/"
@@ -146,11 +143,11 @@ def main():
                 if (i + 1) % 20 == 0:
                     print(f'Epoch [{epoch+1}/{args.epochs}], Step [{i+1}/{len(train_loader)}], Loss: {loss.item():.4f}')
             
-            # Epoch metrikleri
+            # Epoch metrics
             train_loss = running_loss / len(train_loader)
             val_loss, val_snr = validate(model, val_loader, criterion, device)
             
-            # MLflow'a logla
+            # Log to MLflow
             mlflow.log_metric("train_loss", train_loss, step=epoch)
             mlflow.log_metric("val_loss", val_loss, step=epoch)
             mlflow.log_metric("val_snr", val_snr, step=epoch)
@@ -167,10 +164,10 @@ def main():
         
         print("\nFinished Training.")
         
-        # Final model'i MLflow'a logla
+        # Log final model to MLflow
         mlflow.log_metric("best_val_loss", best_val_loss)
         
-        # Model'i MLflow artifact olarak kaydet
+        # Save model as MLflow artifact
         mlflow.pytorch.log_model(
             model,
             artifact_path="model",
@@ -178,7 +175,7 @@ def main():
         )
         print(f"Model logged to MLflow Model Registry as 'SpeechOps-UNet'")
         
-        # Final model'i de kaydet
+        # Save final model
         final_model_path = os.path.join(MODEL_SAVE_PATH, f"final_model_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pth")
         torch.save(model.state_dict(), final_model_path)
         print(f"Final model saved to {final_model_path}")
@@ -186,5 +183,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-
