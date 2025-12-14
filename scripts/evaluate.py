@@ -12,6 +12,7 @@ import argparse
 import mlflow
 
 from pystoi import stoi
+from torchmetrics.functional.audio import scale_invariant_signal_noise_ratio as si_snr
 
 from src.data_loader import SpectrogramDataset, pad_collate_fn
 from src.model import UNet, MODEL_CONFIGS, create_model
@@ -44,20 +45,6 @@ def parse_args():
                         help="MLflow experiment name")
     
     return parser.parse_args()
-
-
-def signal_to_noise_ratio(estimate, target):
-    """Compute Signal-to-Noise Ratio (SNR) in dB."""
-    estimate = estimate.float()
-    target = target.float()
-    noise = target - estimate
-    power_target = torch.sum(target ** 2)
-    power_noise = torch.sum(noise ** 2)
-    if power_noise == 0:
-        return float('inf')
-    snr = 10 * torch.log10(power_target / power_noise)
-    return snr
-
 
 def load_model(model_path: str, args, device: torch.device) -> tuple:
     """
@@ -146,10 +133,7 @@ def evaluate(model, test_loader, device):
                 denoised_wav = denoised_wav[:min_len]
 
                 total_stoi += stoi(clean_wav, denoised_wav, SAMPLE_RATE, extended=False)
-                total_snr += signal_to_noise_ratio(
-                    torch.from_numpy(denoised_wav), 
-                    torch.from_numpy(clean_wav)
-                ).item()
+                total_snr += si_snr(torch.from_numpy(denoised_wav), torch.from_numpy(clean_wav)).item()
                 count += 1
     
     return {
