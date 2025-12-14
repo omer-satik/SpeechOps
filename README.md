@@ -183,7 +183,7 @@ U-Net encoder-decoder with skip connections for spectrogram-based speech enhance
 - **Input**: Noisy magnitude spectrogram [1, 257, T]
 - **Output**: Enhanced magnitude spectrogram [1, 257, T]
 - **Loss**: MSE Loss
-- **Metrics**: SNR, STOI
+- **Metrics**: SI-SNR, STOI
 
 ## License
 
