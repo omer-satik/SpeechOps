@@ -1,0 +1,40 @@
+# SpeechOps Configuration File
+
+# Audio Processing
+audio:
+  sample_rate: 16000
+  n_fft: 512
+  hop_length: 256
+
+# Data Paths
+data:
+  raw_dir: "data/raw"
+  processed_dir: "data/processed"
+  train_dir: "data/processed/train"
+  val_dir: "data/processed/val"
+  test_dir: "data/processed/test"
+
+# Model
+model:
+  in_channels: 1
+  out_channels: 1
+  base_channels: 32
+
+# Training
+training:
+  epochs: 10
+  batch_size: 8
+  learning_rate: 0.001
+  optimizer: "adam"  # adam or sgd
+  num_workers: 4
+
+# MLflow
+mlflow:
+  experiment_name: "SpeechOps-UNet"
+  tracking_uri: "mlruns"
+
+# Paths
+paths:
+  models_dir: "models"
+  logs_dir: "logs"
+

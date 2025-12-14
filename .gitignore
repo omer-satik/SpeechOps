@@ -1,17 +1,75 @@
-# DVC tarafından takip edilecek dosyalar
-# data klasörünün içindeki her şeyi yoksay...
+# ===== Data (tracked by DVC) =====
 /data/*
-# AMA .dvc uzantılı dosyaları ve DVC'nin .gitignore dosyalarını yoksayma!
 !/data/**/*.dvc
 !/data/.gitignore
+!/data/*/.gitignore
 
-# Temporary files
+# ===== Python =====
 __pycache__/
-*.pyc
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
 
-# Google secrets file
-client_secrets.json
+# ===== Virtual Environments =====
+.venv/
+venv/
+ENV/
+env/
+
+# ===== IDE =====
 .vscode/
-client_secret_*
-.dvc/config
+.idea/
+*.swp
+*.swo
+*~
+
+# ===== Jupyter =====
+.ipynb_checkpoints/
+*.ipynb_checkpoints
+
+# ===== MLflow =====
 mlruns/
+
+# ===== Model Artifacts =====
+models/*.pth
+!models/.gitkeep
+
+# ===== Logs =====
+logs/
+*.log
+
+# ===== OS =====
+.DS_Store
+Thumbs.db
+
+# ===== Secrets =====
+.env
+*.env
+client_secret*.json
+*.secret
+
+# ===== DVC =====
+.dvc/config.local
+.dvc/tmp/
+.dvc/cache/
+
+# ===== Testing =====
+.pytest_cache/
+.coverage
+htmlcov/
