@@ -1,0 +1,38 @@
+version: '3.8'
+
+services:
+  speechops-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: speechops-api
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./models:/app/models:ro
+      - ./logs:/app/logs
+    environment:
+      - MODEL_PATH=/app/models/best_model.pth
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  # MLflow UI (optional)
+  mlflow:
+    image: python:3.10-slim
+    container_name: speechops-mlflow
+    ports:
+      - "5001:5000"
+    volumes:
+      - ./mlruns:/mlruns
+    working_dir: /mlruns
+    command: >
+      bash -c "pip install mlflow && mlflow ui --host 0.0.0.0 --port 5000 --backend-store-uri /mlruns"
+    profiles:
+      - full
+    restart: unless-stopped
+

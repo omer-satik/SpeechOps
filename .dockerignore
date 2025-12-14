@@ -1,0 +1,47 @@
+# Git
+.git
+.gitignore
+
+# Data (too large for container)
+data/
+
+# Python
+__pycache__
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+*.so
+.venv/
+venv/
+env/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# Jupyter
+.ipynb_checkpoints/
+notebooks/
+
+# Tests
+tests/
+.pytest_cache/
+.coverage
+
+# MLflow (use volume mount instead)
+mlruns/
+
+# Docs
+*.md
+!README.md
+
+# DVC
+.dvc/
+*.dvc
+
+# Misc
+.DS_Store
+*.log
+
