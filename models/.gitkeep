@@ -1,0 +1,3 @@
+# Keep this directory for trained model weights
+# Model files (.pth) are git-ignored but this folder is tracked
+
