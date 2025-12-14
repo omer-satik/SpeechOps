@@ -1,4 +1,6 @@
+# ==================================================
 # SpeechOps Configuration File
+# ==================================================
 
 # Audio Processing
 audio:
@@ -14,27 +16,104 @@ data:
   val_dir: "data/processed/val"
   test_dir: "data/processed/test"
 
-# Model
-model:
-  in_channels: 1
-  out_channels: 1
-  base_channels: 32
+# ==================================================
+# Model Configurations
+# ==================================================
+# Available configs: small, medium, large, xlarge
+# 
+# | Config  | base_channels | depth | params  |
+# |---------|---------------|-------|---------|
+# | small   | 32            | 2     | ~0.5M   |
+# | medium  | 64            | 2     | ~2M     |
+# | large   | 64            | 3     | ~8M     |
+# | xlarge  | 128           | 3     | ~32M    |
 
-# Training
+model:
+  # Default model config
+  config: "small"
+  
+  # Override individual parameters (optional)
+  # base_channels: 32
+  # depth: 2
+  # dropout: 0.0
+
+# ==================================================
+# Training Hyperparameters
+# ==================================================
 training:
-  epochs: 10
+  epochs: 20
   batch_size: 8
   learning_rate: 0.001
-  optimizer: "adam"  # adam or sgd
+  optimizer: "adam"      # adam, adamw, sgd
+  weight_decay: 0.0      # L2 regularization
+  scheduler: "none"      # none, step, cosine
   num_workers: 4
 
-# MLflow
+# ==================================================
+# Experiment Configurations
+# ==================================================
+# Pre-defined experiments for systematic hyperparameter search
+
+experiments:
+  # Baseline experiments (your 2 existing models)
+  baseline1:
+    model_config: "small"
+    epochs: 20
+    lr: 0.001
+    optimizer: "adam"
+    
+  baseline2:
+    model_config: "medium"
+    epochs: 20
+    lr: 0.001
+    optimizer: "adam"
+  
+  # Hyperparameter experiments
+  exp_lr_low:
+    model_config: "small"
+    epochs: 30
+    lr: 0.0001
+    optimizer: "adam"
+    
+  exp_lr_high:
+    model_config: "small"
+    epochs: 15
+    lr: 0.01
+    optimizer: "adam"
+    scheduler: "step"
+    
+  exp_adamw:
+    model_config: "medium"
+    epochs: 20
+    lr: 0.001
+    optimizer: "adamw"
+    weight_decay: 0.01
+    
+  exp_large_dropout:
+    model_config: "large"
+    epochs: 30
+    lr: 0.0005
+    optimizer: "adamw"
+    weight_decay: 0.01
+    dropout: 0.2
+    
+  exp_cosine:
+    model_config: "medium"
+    epochs: 25
+    lr: 0.001
+    optimizer: "adam"
+    scheduler: "cosine"
+
+# ==================================================
+# MLflow Configuration
+# ==================================================
 mlflow:
   experiment_name: "SpeechOps-UNet"
   tracking_uri: "mlruns"
 
+# ==================================================
 # Paths
+# ==================================================
 paths:
   models_dir: "models"
   logs_dir: "logs"
-

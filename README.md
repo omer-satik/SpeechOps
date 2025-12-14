@@ -161,7 +161,7 @@ curl -X POST "http://127.0.0.1:8080/predict" \
 | 0 | Project setup, Git, DVC | ✅ |
 | 1 | Data pipeline, baseline model | ✅ |
 | 2 | Experiment tracking (MLflow) | ✅ |
-| 3 | Deployment (FastAPI + Docker) | ✅ |
+| 3 | Deployment (FastAPI + Docker) | 🔜 |
 | 4 | CI/CD and Monitoring | 🔜 |
 
 ## Configuration
