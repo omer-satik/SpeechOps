@@ -48,7 +48,7 @@ speechops/
 ### 1. Create Virtual Environment
 
 ```bash
-conda create -n speechops python=3.10 -y
+conda create -n speechops python=3.11 -y
 conda activate speechops
 ```
 
