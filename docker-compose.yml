@@ -12,7 +12,7 @@ services:
       - ./models:/app/models:ro
       - ./logs:/app/logs
     environment:
-      - MODEL_PATH=/app/models/best_model.pth
+      - MODEL_PATH=/app/models/trained.pth
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
@@ -20,6 +20,40 @@ services:
       timeout: 10s
       retries: 3
       start_period: 10s
+    depends_on:
+      - prometheus
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: speechops-prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./prometheus-alerts.yml:/etc/prometheus/prometheus-alerts.yml:ro
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/usr/share/prometheus/console_libraries'
+      - '--web.console.templates=/usr/share/prometheus/consoles'
+    restart: unless-stopped
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: speechops-grafana
+    ports:
+      - "3000:3000"
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_INSTALL_PLUGINS=grafana-clock-panel
+    restart: unless-stopped
+    depends_on:
+      - prometheus
 
   # MLflow UI (optional)
   mlflow:
@@ -35,4 +69,8 @@ services:
     profiles:
       - full
     restart: unless-stopped
+
+volumes:
+  prometheus_data:
+  grafana_data:
 

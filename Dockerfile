@@ -30,7 +30,8 @@ RUN pip install --no-cache-dir --upgrade pip && \
     librosa==0.10.1 \
     soundfile==0.12.1 \
     numpy==1.26.3 \
-    pydantic==2.5.3
+    pydantic==2.5.3 \
+    prometheus-client==0.18.0
 
 # Copy source code
 COPY src/ ./src/

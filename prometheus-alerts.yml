@@ -1,0 +1,73 @@
+groups:
+  - name: speechops_alerts
+    interval: 30s
+    rules:
+      - alert: APIDown
+        expr: speechops_api_health == 0
+        for: 1m
+        labels:
+          severity: critical
+          component: api
+        annotations:
+          summary: "SpeechOps API is down"
+          description: "API is unhealthy for the last 1 minute. Requires immediate attention."
+
+      - alert: ModelNotLoaded
+        expr: speechops_model_loaded == 0
+        for: 30s
+        labels:
+          severity: critical
+          component: model
+        annotations:
+          summary: "Model not loaded in memory"
+          description: "U-Net model could not be loaded into memory. API cannot make predictions."
+
+      - alert: HighPredictionLatency
+        expr: histogram_quantile(0.95, rate(speechops_prediction_duration_seconds_bucket[5m])) > 5
+        for: 5m
+        labels:
+          severity: warning
+          component: model
+        annotations:
+          summary: "High prediction latency (>5s)"
+          description: "95th percentile is {{ $value }}s, exceeding 5 seconds"
+
+      - alert: LowSuccessRate
+        expr: speechops_processing_success_rate < 0.95
+        for: 5m
+        labels:
+          severity: warning
+          component: api
+        annotations:
+          summary: "Low success rate (<95%)"
+          description: "Processing success rate is {{ $value | humanizePercentage }}"
+
+      - alert: HighErrorRate
+        expr: rate(speechops_predictions_total{status="error"}[5m]) > 0.05
+        for: 5m
+        labels:
+          severity: warning
+          component: api
+        annotations:
+          summary: "High error rate (>5%)"
+          description: "Prediction error rate is {{ $value }} errors/s"
+
+      - alert: PrometheusDown
+        expr: up{job="speechops-api"} == 0
+        for: 2m
+        labels:
+          severity: critical
+          component: monitoring
+        annotations:
+          summary: "Prometheus metrics cannot be scraped"
+          description: "Prometheus cannot scrape metrics from API"
+
+      - alert: HighRequestRate
+        expr: rate(speechops_requests_total[1m]) > 100
+        for: 5m
+        labels:
+          severity: info
+          component: api
+        annotations:
+          summary: "High request rate (>100 req/s)"
+          description: "Request rate is {{ $value | humanize }} req/s"

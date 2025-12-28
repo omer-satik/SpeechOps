@@ -15,13 +15,27 @@ import librosa
 import numpy as np
 import soundfile as sf
 from fastapi import FastAPI, File, UploadFile, HTTPException
-from fastapi.responses import StreamingResponse, JSONResponse
+from fastapi.responses import StreamingResponse, JSONResponse, Response
 from pydantic import BaseModel
+from prometheus_client import generate_latest, CONTENT_TYPE_LATEST, REGISTRY
+from fastapi.middleware import Middleware
+from starlette.middleware.base import BaseHTTPMiddleware
 
 # Import model
 import sys
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from src.model import UNet
+from src.metrics import (
+    request_count, 
+    request_duration, 
+    predictions_total,
+    prediction_duration,
+    audio_file_size,
+    api_health,
+    model_loaded,
+    processing_success_rate,
+    processing_rtf
+)
 
 # Ensure logs directory exists before configuring logging
 os.makedirs('logs', exist_ok=True)
@@ -41,7 +55,7 @@ logger = logging.getLogger(__name__)
 SAMPLE_RATE = 16000
 N_FFT = 512
 HOP_LENGTH = 256
-MODEL_PATH = os.getenv("MODEL_PATH", "models/best_model.pth")
+MODEL_PATH = os.getenv("MODEL_PATH", "models/trained.pth")
 
 # Initialize FastAPI app
 app = FastAPI(
@@ -137,6 +151,29 @@ def denoise_audio_bytes(audio_bytes: bytes) -> tuple[bytes, float, float]:
     return output_buffer.getvalue(), input_duration, output_duration
 
 
+# Middleware: Record request metrics
+class MetricsMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request, call_next):
+        start_time = time.time()
+        
+        response = await call_next(request)
+        
+        duration = time.time() - start_time
+        request_count.labels(
+            method=request.method,
+            endpoint=request.url.path,
+            status=response.status_code
+        ).inc()
+        
+        request_duration.labels(
+            method=request.method,
+            endpoint=request.url.path
+        ).observe(duration)
+        
+        return response
+
+app.add_middleware(MetricsMiddleware)
+
 @app.on_event("startup")
 async def startup_event():
     """Load model on startup."""
@@ -156,11 +193,26 @@ async def root():
     }
 
 
+# Add Metrics endpoint
+@app.get("/metrics", include_in_schema=False)
+async def metrics():
+    """Prometheus metrics"""
+    return Response(
+        content=generate_latest(REGISTRY),
+        media_type=CONTENT_TYPE_LATEST
+    )
+
+
+# Health check
 @app.get("/health", response_model=HealthResponse)
 async def health_check():
-    """Health check endpoint."""
+    """Health check endpoint"""
+    health_status = 1 if model is not None else 0
+    api_health.set(health_status)
+    model_loaded.set(health_status)
+    
     return HealthResponse(
-        status="healthy",
+        status="healthy" if model else "unhealthy",
         model_loaded=model is not None,
         device=str(device) if device else "not initialized",
         timestamp=datetime.now().isoformat()
@@ -169,54 +221,56 @@ async def health_check():
 
 @app.post("/predict")
 async def predict(file: UploadFile = File(...)):
-    """
-    Denoise an audio file.
-    
-    - **file**: Audio file (WAV, MP3, etc.)
-    
-    Returns: Denoised audio file (WAV format)
-    """
+    """Denoise audio file"""
     start_time = time.time()
     
-    # Validate file
-    if not file.filename:
-        raise HTTPException(status_code=400, detail="No file provided")
-    
-    # Read file
     try:
+        # Record file size
         audio_bytes = await file.read()
-    except Exception as e:
-        logger.error(f"Error reading file: {e}")
-        raise HTTPException(status_code=400, detail=f"Error reading file: {str(e)}")
-    
-    # Process audio
-    try:
+        audio_file_size.observe(len(audio_bytes))
+        
+        # Make prediction
+        pred_start = time.time()
         denoised_bytes, input_dur, output_dur = denoise_audio_bytes(audio_bytes)
+        pred_duration = time.time() - pred_start
+        
+        # Update metrics
+        prediction_duration.observe(pred_duration)
+        predictions_total.labels(status="success").inc()
+        processing_success_rate.set(1.0)
+        
+        # Calculate and observe RTF
+        if input_dur > 0:
+            rtf = pred_duration / input_dur
+            processing_rtf.observe(rtf)
+            
+            logger.info(f"RTF: {rtf:.4f} (Pred: {pred_duration:.2f}s / Input: {input_dur:.2f}s)")
+        
+        processing_time = (time.time() - start_time) * 1000
+        
+        logger.info(
+            f"Processed: {file.filename} | "
+            f"Duration: {input_dur:.2f}s | "
+            f"Processing: {processing_time:.0f}ms"
+        )
+        
+        output_filename = f"denoised_{file.filename.rsplit('.', 1)[0]}.wav"
+        return StreamingResponse(
+            io.BytesIO(denoised_bytes),
+            media_type="audio/wav",
+            headers={
+                "Content-Disposition": f"attachment; filename={output_filename}",
+                "X-Processing-Time-Ms": str(round(processing_time, 2)),
+                "X-Input-Duration-Sec": str(round(input_dur, 2)),
+                "X-Output-Duration-Sec": str(round(output_dur, 2))
+            }
+        )
+    
     except Exception as e:
+        predictions_total.labels(status="error").inc()
+        processing_success_rate.set(0.0)
         logger.error(f"Error processing audio: {e}")
         raise HTTPException(status_code=500, detail=f"Error processing audio: {str(e)}")
-    
-    processing_time = (time.time() - start_time) * 1000  # ms
-    
-    # Log request
-    logger.info(
-        f"Processed: {file.filename} | "
-        f"Duration: {input_dur:.2f}s | "
-        f"Processing: {processing_time:.0f}ms"
-    )
-    
-    # Return audio file
-    output_filename = f"denoised_{file.filename.rsplit('.', 1)[0]}.wav"
-    return StreamingResponse(
-        io.BytesIO(denoised_bytes),
-        media_type="audio/wav",
-        headers={
-            "Content-Disposition": f"attachment; filename={output_filename}",
-            "X-Processing-Time-Ms": str(round(processing_time, 2)),
-            "X-Input-Duration-Sec": str(round(input_dur, 2)),
-            "X-Output-Duration-Sec": str(round(output_dur, 2))
-        }
-    )
 
 
 @app.post("/predict/json", response_model=PredictResponse)
