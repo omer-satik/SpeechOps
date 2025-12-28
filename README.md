@@ -92,7 +92,7 @@ PYTHONPATH=. python scripts/evaluate.py
 
 ```bash
 PYTHONPATH=. python scripts/inference.py \
-    --model-path models/best_model.pth \
+    --model-path models/trained/best_model.pth \
     --input-file noisy_audio.wav \
     --output-file clean_audio.wav
 ```

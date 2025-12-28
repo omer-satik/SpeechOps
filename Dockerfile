@@ -4,7 +4,7 @@ FROM python:3.10-slim
 # Set environment variables
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
-ENV MODEL_PATH=/app/models/best_model.pth
+ENV MODEL_PATH=/app/models/trained/best_model.pth
 
 # Set working directory
 WORKDIR /app

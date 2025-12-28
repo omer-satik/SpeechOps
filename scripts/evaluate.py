@@ -25,7 +25,7 @@ HOP_LENGTH = 256
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Evaluate SpeechOps model")
-    parser.add_argument("--model_path", type=str, default="models/best_model.pth",
+    parser.add_argument("--model_path", type=str, default="models/trained/best_model.pth",
                         help="Path to model checkpoint")
     parser.add_argument("--test_dir", type=str, default="data/processed/test",
                         help="Path to test data directory")
