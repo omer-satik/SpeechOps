@@ -3,6 +3,10 @@
 Training script with MLflow integration and configurable model architecture.
 Supports different model sizes and hyperparameter experiments.
 """
+import sys
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+
 import torch
 import torch.nn as nn
 import torch.optim as optim
