@@ -17,6 +17,8 @@ speechops/
 │   │   ├── val/
 │   │   └── test/
 │   └── *.dvc               # DVC tracking files
+├── grafana/                # Grafana provisioning and dashboards
+│   └── provisioning/
 ├── logs/                   # Log files
 ├── mlruns/                 # MLflow experiment tracking
 ├── models/                 # Trained model weights
@@ -31,6 +33,7 @@ speechops/
 ├── src/                    # Source code package
 │   ├── __init__.py
 │   ├── data_loader.py      # PyTorch Dataset and DataLoader
+│   ├── metrics.py          # Prometheus metrics definitions
 │   └── model.py            # U-Net model architecture
 ├── tests/                  # Unit tests
 │   ├── __init__.py
@@ -38,9 +41,15 @@ speechops/
 │   └── test_data_loader.py
 ├── .dvc/                   # DVC configuration
 ├── .gitignore
+├── docker-compose.yml      # Full stack Docker composition
+├── Dockerfile              # API Container definition
+├── prometheus-alerts.yml   # Alerting rules
+├── prometheus.yml          # Prometheus configuration
 ├── pyproject.toml          # Project configuration
 ├── README.md
-└── requirements.txt        # Python dependencies
+├── requirements.txt        # Python dependencies
+├── run_all.ps1             # Start all services (Windows)
+└── stop_all.ps1            # Stop all services (Windows)
 ```
 
 ## Setup
@@ -103,7 +112,19 @@ PYTHONPATH=. python scripts/inference.py \
 pytest tests/ -v
 ```
 
-## Docker Deployment
+## Deployment & Monitoring (Docker)
+
+The project includes a full monitoring stack with Prometheus and Grafana.
+
+### Quick Start (Windows)
+
+```powershell
+# Start all services (API, Prometheus, Grafana, MLflow)
+.\run_all.ps1
+
+# Stop all services
+.\stop_all.ps1
+```
 
 ### Build and Run with Docker
 
@@ -114,15 +135,11 @@ docker build -t speechops-service .
 # Run the container
 docker run -p 8080:8080 -v ./models:/app/models:ro speechops-service
 ```
-
 ### Using Docker Compose
 
 ```bash
-# Start API service
+# Start all services
 docker-compose up -d
-
-# Start with MLflow UI (optional)
-docker-compose --profile full up -d
 
 # View logs
 docker-compose logs -f
@@ -131,15 +148,33 @@ docker-compose logs -f
 docker-compose down
 ```
 
+### Services & Ports
+
+| Service | URL | Description |
+|---------|-----|-------------|
+| **API** | http://localhost:8080 | Main Speech Enhancement API |
+| **Grafana** | http://localhost:3000 | Monitoring Dashboards (User: `admin`, Pass: `admin`) |
+| **Prometheus** | http://localhost:9090 | Metrics Collection & Querying |
+| **MLflow** | http://localhost:5001 | Experiment Tracking UI |
+
 ### API Endpoints
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
 | GET | `/` | API info |
 | GET | `/health` | Health check |
+| GET | `/metrics` | Prometheus metrics |
 | GET | `/docs` | Swagger UI |
 | POST | `/predict` | Denoise audio file (returns WAV) |
 | POST | `/predict/json` | Denoise and return metadata |
+
+### Monitoring Dashboard
+
+A pre-configured dashboard **"SpeechOps - API Monitoring"** is available in Grafana. It tracks:
+* **System Health**: API status, Model loaded status.
+* **Performance**: Prediction latency, Real Time Factor (RTF).
+* **Traffic**: Request rates, Success/Error rates.
+* **Resources**: CPU and RAM usage.
 
 ### Test with cURL
 
@@ -161,8 +196,8 @@ curl -X POST "http://127.0.0.1:8080/predict" \
 | 0 | Project setup, Git, DVC | ✅ |
 | 1 | Data pipeline, baseline model | ✅ |
 | 2 | Experiment tracking (MLflow) | ✅ |
-| 3 | Deployment (FastAPI + Docker) | 🔜 |
-| 4 | CI/CD and Monitoring | 🔜 |
+| 3 | Deployment (FastAPI + Docker) | ✅ |
+| 4 | Monitoring (Prometheus + Grafana) | ✅ |
 
 ## Configuration
 
@@ -188,4 +223,3 @@ U-Net encoder-decoder with skip connections for spectrogram-based speech enhance
 ## License
 
 MIT
-

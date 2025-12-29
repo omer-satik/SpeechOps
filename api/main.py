@@ -55,7 +55,7 @@ logger = logging.getLogger(__name__)
 SAMPLE_RATE = 16000
 N_FFT = 512
 HOP_LENGTH = 256
-MODEL_PATH = os.getenv("MODEL_PATH", "models/trained.pth")
+MODEL_PATH = os.getenv("MODEL_PATH", "models/trained/best_model.pth")
 
 # Initialize FastAPI app
 app = FastAPI(
